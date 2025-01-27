@@ -7,7 +7,7 @@ export const Header = () => {
         href={"/"}
         className="text-primary text-2xl font-bold hover:cursor-pointer md:text-3xl"
       >
-        Qepo
+        TESTINGTEST
       </Link>
     </header>
   );

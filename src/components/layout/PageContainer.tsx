@@ -26,7 +26,7 @@ export const PageContainer = forwardRef<
         {withFooter && (
           <footer className="flex min-h-16 border-t-2 p-4">
             <p className="text-muted-foreground w-full text-center">
-              © 2024 Fanattic. All rights reserved
+              © 2024 osenoe. All rights reserved
             </p>
           </footer>
         )}

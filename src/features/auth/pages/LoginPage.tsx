@@ -14,29 +14,45 @@ import {
 import { Form } from "~/components/ui/form";
 import { RegisterFormInner } from "../components/RegisterFormInner";
 import { type RegisterFormSchema, registerFormSchema } from "../forms/register";
-import { api } from "~/utils/api";
 import { toast } from "sonner";
+import { supabase } from "~/lib/supabase/client";
+import { type AuthError } from "@supabase/supabase-js";
+import { SupabaseAuthErrorCode } from "~/lib/supabase/authErrorCodes";
+import { useRouter } from "next/router";
 import { GuestRoute } from "~/components/layout/GuestRoute";
 
-const RegisterPage = () => {
+const LoginPage = () => {
   const form = useForm<RegisterFormSchema>({
     resolver: zodResolver(registerFormSchema),
   });
 
-  const { mutate: registerUser, isPending: registerUserIsPending } =
-    api.auth.register.useMutation({
-      onSuccess: () => {
-        toast("Akun kamu berhasil dibuat!");
-        form.setValue("email", "");
-        form.setValue("password", "");
-      },
-      onError: () => {
-        toast.error("Ada kesalahan terjadi, coba beberapa saat lagi");
-      },
-    });
+  const router = useRouter();
 
-  const handleRegisterSubmit = (values: RegisterFormSchema) => {
-    registerUser(values);
+  const handleLoginSubmit = async (values: RegisterFormSchema) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (error) throw error;
+
+      await router.replace("/");
+    } catch (error) {
+      switch ((error as AuthError).code) {
+        case SupabaseAuthErrorCode.invalid_credentials:
+          form.setError("email", { message: "Email atau password salah" });
+          form.setError("password", {
+            message: "Email atau password salah",
+          });
+          break;
+        case SupabaseAuthErrorCode.email_not_confirmed:
+          form.setError("email", { message: "Email belum diverifikasi" });
+          break;
+        default:
+          toast.error("Sebuah kesalahan terjadi, coba lagi beberapa saat.");
+      }
+    }
   };
 
   return (
@@ -48,7 +64,9 @@ const RegisterPage = () => {
         >
           <Card className="w-full max-w-[480px] self-center">
             <CardHeader className="flex flex-col items-center justify-center">
-              <h1 className="text-3xl font-bold text-primary">Buat Akun</h1>
+              <h1 className="text-3xl font-bold text-primary">
+                Selamat Datang Kembali 👋
+              </h1>
               <p className="text-muted-foreground">
                 Qepoin kreator favorite kamu
               </p>
@@ -56,9 +74,9 @@ const RegisterPage = () => {
             <CardContent>
               <Form {...form}>
                 <RegisterFormInner
-                  isLoading={registerUserIsPending}
-                  onRegisterSubmit={handleRegisterSubmit}
-                  showPassword
+                  // isLoading={registerUserIsPending}
+                  onRegisterSubmit={handleLoginSubmit}
+                  buttonText="Masuk"
                 />
               </Form>
             </CardContent>
@@ -74,13 +92,13 @@ const RegisterPage = () => {
 
               <Button variant="secondary" className="w-full" size="lg">
                 <FcGoogle />
-                Buat Akun dengan Google
+                Masuk dengan Google
               </Button>
 
               <p>
-                Sudah punya akun?{" "}
-                <Link href="/login" className="font-bold text-purple-600">
-                  P, Login
+                Belum punya akun?{" "}
+                <Link href="/register" className="font-bold text-purple-600">
+                  Daftar dong
                 </Link>
               </p>
             </CardFooter>
@@ -91,4 +109,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default LoginPage;
